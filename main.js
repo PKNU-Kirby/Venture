@@ -11,7 +11,8 @@ function createWindow () {
           preload: path.join(__dirname, 'preload.js'),
           contextIsolation: true,        // ✅ 필수
           nodeIntegration: false,        // ✅ 보안상 false
-          enableRemoteModule: false      // ✅ Remote 사용 안함
+          enableRemoteModule: false,      // ✅ Remote 사용 안함
+          sandox: false
         }
       });
 

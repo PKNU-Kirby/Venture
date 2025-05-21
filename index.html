@@ -5,64 +5,7 @@
   <title>Excel Chart Viewer</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    .input-group {
-      margin-bottom: 20px;
-    }
-    .range-input {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
-    .range-input input {
-      width: 60px;
-      padding: 5px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 14px;
-    }
-    .range-input input:focus {
-      outline: none;
-      border-color: #2196f3;
-      box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
-    }
-    .chart-container {
-      width: 1000px;
-      height: 700px;
-      margin: 0 auto;
-    }
-    #chartContainer {
-      display: none;
-    }
-    .values-display {
-      margin-top: 20px;
-      padding: 10px;
-      background-color: #f5f5f5;
-      border-radius: 5px;
-    }
-    button {
-      background-color: #2196f3;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    button:hover {
-      background-color: #1976d2;
-    }
-    label {
-      font-size: 14px;
-      color: #333;
-    }
-  </style>
+  <script type="module" src="renderer.js"></script>
 </head>
 <body>
   <div class="container">
@@ -81,7 +24,7 @@
       <button id="generateChart">차트 생성</button>
     </div>
     <div id="chartContainer" class="chart-container">
-      <canvas id="mainChart"></canvas>
+      <canvas id="mainChart" width="1000" height="700"></canvas>
     </div>
     <div class="values-display">
       <p>K 값: <span id="kValue">-</span></p>
