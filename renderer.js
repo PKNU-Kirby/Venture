@@ -1,5 +1,6 @@
 import { calculateKAndN, createDataPoints } from './calculator.js';
 import { updateChart, toggleChartContainer, updateKNValues } from './chartManager.js';
+import { calculateSum, updateSumDisplay, calculateEvaluation, updateEvaluationDisplay, generateResultTableDelta } from './evaluation.js';
 
 const {
   selectExcelFile,
@@ -12,10 +13,16 @@ let selectedFilePath = null;
 document.addEventListener('DOMContentLoaded', () => {
   const startRowInput = document.getElementById('startRow');
   const endRowInput = document.getElementById('endRow');
+  const beforeInput = document.getElementById('beforeValue');
+  const degreeInput = document.getElementById('degreeValue');
+  const frictionInput = document.getElementById('frictionValue');
 
   // 기본값 설정
   startRowInput.value = '';
   endRowInput.value = '';
+  beforeInput.value = '';
+  degreeInput.value = '';
+  frictionInput.value = '';
 
   // 입력 필드 이벤트 처리
   startRowInput.addEventListener('input', function() {
@@ -26,6 +33,28 @@ document.addEventListener('DOMContentLoaded', () => {
   endRowInput.addEventListener('input', function() {
     this.value = this.value.replace(/[^0-9]/g, '');
     if (this.value < 1) this.value = 1;
+  });
+
+  // 평가 계산 버튼 이벤트 처리
+  document.getElementById('calculateEvaluation').addEventListener('click', () => {
+    const before = parseFloat(beforeInput.value);
+    const degree = parseFloat(degreeInput.value); // 단일 degree는 평가 결과용
+    const u = parseFloat(frictionInput.value);
+    
+    // K와 N 값 가져오기
+    const kValue = document.getElementById('kValue').textContent;
+    const nValue = document.getElementById('nValue').textContent;
+    
+    const k = parseFloat(kValue);
+    const n = parseFloat(nValue);
+
+    // 평가 결과 텍스트(단일 degree, after=before)
+    const result = calculateEvaluation(before, before, degree, u, k, n);
+    updateEvaluationDisplay(result);
+
+    // Δ 배열 정의
+    const deltaArr = [5, 10, 15, 20, 25, 30, 35, 40];
+    generateResultTableDelta(before, deltaArr, u, k, n);
   });
 });
 
@@ -94,6 +123,10 @@ document.getElementById('generateChart').addEventListener('click', async () => {
     
     // K와 N 값 표시
     updateKNValues(k, n);
+    
+    // K와 N 값의 합 계산 및 표시
+    const sum = calculateSum(k, n);
+    updateSumDisplay(sum);
     
     // 차트 컨테이너 표시
     toggleChartContainer(true);

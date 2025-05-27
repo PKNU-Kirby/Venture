@@ -6,6 +6,31 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script type="module" src="renderer.js"></script>
+  <style>
+    .result-table {
+      border-collapse: collapse;
+      margin: 20px 0;
+      width: 100%;
+    }
+    .result-table th, .result-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+    .result-table th {
+      background-color: #f5f5f5;
+    }
+    .usable {
+      background-color: white;
+    }
+    .unusable {
+      background-color: black;
+      color: white;
+    }
+    .boundary {
+      background-color: gray;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -30,6 +55,19 @@
       <p>K 값: <span id="kValue">-</span></p>
       <p>N 값: <span id="nValue">-</span></p>
     </div>
+    <div class="input-group">
+      <div class="evaluation-input">
+        <label>평가 값:</label>
+        <input type="number" id="beforeValue" step="0.01" placeholder="성형 전 봉재 치수">
+        <input type="number" id="afterValue" step="0.01" placeholder="성형 후 봉재 치수">
+        <input type="number" id="degreeValue" step="0.01" placeholder="금형 반각">
+        <input type="number" id="frictionValue" step="0.01" placeholder="마찰계수(u)">
+        <input type="number" id="afterStep" step="0.01" placeholder="after 증가 간격" value="0.1">
+        <button id="calculateEvaluation">평가 계산</button>
+      </div>
+    </div>
+    <p>평가 결과: <span id="evaluationResult">-</span></p>
+    <div id="resultTableContainer"></div>
   </div>
   <script src="renderer.js"></script>
 </body>

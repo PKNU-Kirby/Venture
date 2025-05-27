@@ -103,3 +103,4 @@ ipcMain.handle('extract-chart-data', async (event, filePath, range) => {
     throw error;
   }
 });
+
