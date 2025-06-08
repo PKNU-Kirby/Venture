@@ -81,7 +81,7 @@ export function updateChart(ctx, dataPoints) {
     return;
   }
 
-  // ✅ 콘솔 로그 추가
+  // 콘솔 로그 추가
   console.log('[차트 생성] 데이터 포인트:', dataPoints);
 
   if (chart) {

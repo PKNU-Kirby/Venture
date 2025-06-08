@@ -55,6 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Δ 배열 정의
     const deltaArr = [5, 10, 15, 20, 25, 30, 35, 40];
     generateResultTableDelta(before, deltaArr, u, k, n);
+
   });
 });
 
@@ -138,5 +139,16 @@ document.getElementById('generateChart').addEventListener('click', async () => {
   } catch (error) {
     console.error('차트 생성 중 오류:', error);
     alert('차트 생성 중 오류가 발생했습니다.');
+  }
+});
+
+// 계산기 토글 버튼
+document.getElementById('visibilityCalc').addEventListener('click', async () => {
+  const calculator = document.querySelector('.calc-values');
+
+  if (calculator.style.display === 'none' || calculator.style.display === '') {
+    calculator.style.display = 'block';
+  } else {
+    calculator.style.display = 'none';
   }
 });

@@ -53,28 +53,30 @@ function calculateValues(before, after, degree, u, k, n) {
     const f1 = calculateArea(before);
     const f2 = calculateArea(after);
 
-    // F 계산 (f1 - f2)
+    // F 계산 : 단면적 변화량
     const F = f1 - f2;
 
-    // 변형도 계산
+    // E 계산 : 변형도
     const E = Math.log(f1 / f2);
 
-    // k_fm 계산
+    // k_fm 계산 : 재료의 평균 항복 강도
     const k_fm = k * Math.pow(E, n) / (1 + n);
 
     // Q 계산
     const Q = (Math.PI * (Math.pow(before, 2) - Math.pow(after, 2))) / (4 * Math.sin(degree * Math.PI / 180));
 
-    // km 계산
+    // km 계산 : 평균 변형 저항
     const km = k_fm / (1 + ((F + Q * u) / (2 * f2)));
 
-    // Z_N, Z_R, Z_S 계산
+    // Z_N, Z_R, Z_S 계산 : 순수 변형 힘, 마찰 저항 힘, 내부 전단 힘
+    // Z 계산 : 인발력
     const Z_N = km * F;
     const Z_R = Q * u * km;
     const Z_S = 0.77 * f2 * k_fm * (Math.PI / 180 * degree);
+    const Z = Z_N + Z_R + Z_S;
 
-    // a 계산
-    const a = (Z_N + Z_R + Z_S) / f2;
+    // a 계산 : 인발 응력
+    const a = Z / f2;
 
     return { km, a };
 }
@@ -162,6 +164,7 @@ export function generateResultTableDelta(before, deltaArr, u, k, n) {
         kmRow.innerHTML = `<td rowspan="2">${degree}</td>`;
         dArr.forEach((d, idx) => {
             const { km, a } = calculateValues(before, d, degree, u, k, n);
+
             const cell = document.createElement('td');
             if (Math.abs(a - km) < 0.0001) {
                 cell.className = 'boundary';
