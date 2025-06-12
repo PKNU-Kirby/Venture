@@ -287,6 +287,42 @@ button:hover {
 }
 
 /**********************************************/
+/* 분석 결과 스타일 */
+#analysisResult {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #333;
+}
+
+#analysisResult::-webkit-scrollbar {
+  width: 8px;
+}
+
+#analysisResult::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+#analysisResult::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+#analysisResult::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/**********************************************/
 @media (max-width: 768px) {
   body {
     padding: 10px;

@@ -6,53 +6,93 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script type="module" src="renderer.js"></script>
+  <style>
+    .result-table {
+      border-collapse: collapse;
+      margin: 20px 0;
+      width: 100%;
+    }
+    .result-table th, .result-table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: center;
+    }
+    .result-table th {
+      background-color: #f5f5f5;
+    }
+    .usable {
+      background-color: white;
+    }
+    .unusable {
+      background-color: black;
+      color: white;
+    }
+    .boundary {
+      background-color: gray;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
-    <h1>Excel 데이터 분석기</h1>
+    <h1>📊 Excel 데이터 분석기</h1>
     
-    <div class="excel-table">
-      <div class="input-group">
-        <button id="loadExcel">엑셀 파일 선택</button>
+    <div class="input-group">
+      <button id="loadExcel">엑셀 파일 선택</button>
+    </div>
+    <div class="input-group">
+      <div class="range-input">
+        <label>데이터 범위:</label>
+        <input type="number" id="startRow" min="1" step="1" placeholder="시작 행">
+        <span>:</span>
+        <input type="number" id="endRow" min="1" step="1" placeholder="끝 행">
       </div>
-      <div class="input-group">
-        <div class="range-input">
-          <label>데이터 범위</label>
-          <input type="number" id="startRow" min="1" step="1" placeholder="시작 행">
-          <span>:</span>
-          <input type="number" id="endRow" min="1" step="1" placeholder="끝 행">
-        </div>
-        <button id="generateChart">차트 생성</button>
-
-    <button id="visibilityCalc" class="calc-btn">계산기</button>
-      </div>
-      <div id="chartContainer" class="chart-container">
-        <canvas id="mainChart" width="1000" height="700"></canvas>
+      <button id="generateChart">차트 생성</button>
+    </div>
+    <div id="chartContainer" class="chart-container">
+      <canvas id="mainChart" width="1000" height="700"></canvas>
+    </div>
+    <button onclick="runAnalysis()">그래프 분석</button>
+    <pre id="analysisResult"></pre>
+    <div class="values-display">
+      <p>K 값: <span id="kValue">-</span></p>
+      <p>N 값: <span id="nValue">-</span></p>
+    </div>
+    <div class="input-group">
+      <div class="evaluation-input">
+        <label>평가 값:</label>
+        <input type="number" id="dValue" step="0.01" placeholder="초기 봉재 치수(d)">
+        <input type="number" id="degreeValue" step="0.01" placeholder="금형 반각">
+        <input type="number" id="frictionValue" step="0.01" placeholder="마찰계수(u)">
+        <button id="calculateEvaluation">평가 계산</button>
       </div>
     </div>
-
-    
-    <!--<div class="calc-values" style="display:none">-->
-    <div class="calc-values">
-      <div class="values-display">
-        <p>K 값 <span id="kValue">-</span></p>
-        <p>N 값 <span id="nValue">-</span></p>
-      </div>
-      <div class="input-group">
-        <div class="evaluation-input">
-          <label>평가 값</label>
-          <input type="number" id="beforeValue" step="0.01" placeholder="성형 전 봉재 치수">
-          <input type="number" id="afterValue" step="0.01" placeholder="성형 후 봉재 치수">
-          <input type="number" id="degreeValue" step="0.01" placeholder="금형 반각">
-          <input type="number" id="frictionValue" step="0.01" placeholder="마찰계수(u)">
-          <!--<input type="number" id="afterStep" step="0.01" placeholder="after 증가 간격" value="0.1">-->
-          <button id="calculateEvaluation">평가 계산</button>
-        </div>
-      </div>
-      <p>평가 결과: <span id="evaluationResult">-</span></p>
-      <div id="resultTableContainer"></div>
-    </div>
+    <p>평가 결과: <span id="evaluationResult">-</span></p>
+    <div id="resultTableContainer"></div>
   </div>
   <script src="renderer.js"></script>
 </body>
 </html>
+
+<script>
+  async function runAnalysis() {
+    const filePath = window.currentFilePath;  // 🔄 이미 선택된 파일 경로를 사용
+    const chartRange = window.currentRange;   // 🔄 이미 선택된 범위 사용
+
+    if (!filePath || !chartRange) {
+      alert("먼저 엑셀 파일을 불러오고 범위를 설정하세요.");
+      return;
+    }
+
+    const result = await window.electronAPI.extractChartData(filePath, chartRange);
+    console.log('📦 차트 데이터:', result.data);
+    const analysis = await window.electronAPI.analyzeChartData(result.data);
+    console.log('🧠 분석 결과:', analysis);
+
+    const analysisOutput = document.getElementById('analysisResult');
+    if (typeof analysis === 'string') {
+      analysisOutput.textContent = analysis;
+    } else {
+      analysisOutput.textContent = '분석 결과를 불러오지 못했습니다.';
+    }
+  }
+</script>
