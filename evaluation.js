@@ -112,10 +112,7 @@ export function calculateEvaluation(d, degree, u, k, n) {
     }
 
     // 상세 정보 포함
-    return `평가 결과: ${result}\n` +
-           `a 값: ${a.toFixed(4)}\n` +
-           `km 값: ${km.toFixed(4)}\n` +
-           `d_after 값: ${d_after.toFixed(4)}`;
+    return `${result}\n`;
 }
 
 /**
@@ -208,5 +205,119 @@ export function updateEvaluationDisplay(result) {
     const evaluationElement = document.getElementById('evaluationResult');
     if (evaluationElement) {
         evaluationElement.textContent = result;
+    }
+}
+
+/**
+ * 입력 필드의 포커스 이벤트를 처리하는 함수
+ */
+export function setupInputFields() {
+    const inputs = ['d', 'degree', 'u'];
+    inputs.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+            // 포커스 시 기본값 저장
+            input.addEventListener('focus', function() {
+                if (this.value === this.defaultValue) {
+                    this.value = '';
+                }
+            });
+            
+            // 포커스 아웃 시 빈 값이면 기본값으로 복원
+            input.addEventListener('blur', function() {
+                if (this.value === '') {
+                    this.value = this.defaultValue;
+                }
+            });
+        }
+    });
+}
+
+/**
+ * 결과 테이블을 엑셀 파일로 내보내는 함수
+ * @param {number} d - 성형 전 봉재 치수
+ * @param {number[]} deltaArr - 퍼센트 감소율 배열
+ * @param {number} u - 마찰계수
+ * @param {number} k - K값
+ * @param {number} n - N값
+ */
+export async function exportToExcel(d, deltaArr, u, k, n) {
+    try {
+        // 데이터 배열 생성
+        const data = [];
+        const styles = [];
+        
+        // 헤더 행 추가
+        const header = ['Semi-Angle (degree)', ...deltaArr.map(delta => `${delta}%`)];
+        data.push(header);
+        styles.push(Array(header.length).fill({}));
+        
+        // d_after 행 추가
+        const d_afterArr = deltaArr.map(delta => d * Math.sqrt(1 - delta/100));
+        data.push(['d_after', ...d_afterArr.map(val => val.toFixed(2))]);
+        styles.push(Array(d_afterArr.length + 1).fill({}));
+        
+        // 각 degree에 대한 결과 추가
+        for (let degree = 2; degree <= 20; degree += 2) {
+            // km 행
+            const kmRow = [degree];
+            const kmStyles = [{}];
+            d_afterArr.forEach((d_after, idx) => {
+                const { km, a } = calculateValues(d, degree, u, k, n);
+                kmRow.push(km.toFixed(2));
+                
+                // 셀 스타일 설정
+                let style = {};
+                if (Math.abs(a - km) < 0.0001) {
+                    style = { fill: { fgColor: { rgb: "808080" } } }; // 회색
+                } else if (a < km) {
+                    style = { fill: { fgColor: { rgb: "FFFFFF" } } }; // 흰색
+                } else {
+                    style = { 
+                        fill: { fgColor: { rgb: "000000" } },
+                        font: { color: { rgb: "FFFFFF" } }
+                    }; // 검은색 배경, 흰색 글씨
+                }
+                kmStyles.push(style);
+            });
+            data.push(kmRow);
+            styles.push(kmStyles);
+
+            // a 행
+            const aRow = [degree];
+            const aStyles = [{}];
+            d_afterArr.forEach((d_after, idx) => {
+                const { km, a } = calculateValues(d, degree, u, k, n);
+                aRow.push(a.toFixed(2));
+                
+                // 셀 스타일 설정
+                let style = {};
+                if (Math.abs(a - km) < 0.0001) {
+                    style = { fill: { fgColor: { rgb: "808080" } } }; // 회색
+                } else if (a < km) {
+                    style = { fill: { fgColor: { rgb: "FFFFFF" } } }; // 흰색
+                } else {
+                    style = { 
+                        fill: { fgColor: { rgb: "000000" } },
+                        font: { color: { rgb: "FFFFFF" } }
+                    }; // 검은색 배경, 흰색 글씨
+                }
+                aStyles.push(style);
+            });
+            data.push(aRow);
+            styles.push(aStyles);
+        }
+        
+        // Electron API를 통해 파일 저장
+        const result = await window.electronAPI.saveExcelFile({ data, styles });
+        
+        if (result.success) {
+            alert(result.message);
+        } else {
+            alert(result.message);
+        }
+    } catch (error) {
+        console.error('엑셀 내보내기 중 오류:', error);
+        alert('엑셀 파일 저장 중 오류가 발생했습니다.');
     }
 }

@@ -104,3 +104,50 @@ ipcMain.handle('extract-chart-data', async (event, filePath, range) => {
   }
 });
 
+// 엑셀 파일 저장
+ipcMain.handle('save-excel-file', async (event, { data, styles }) => {
+  try {
+    const { canceled, filePath } = await dialog.showSaveDialog({
+      title: '엑셀 파일 저장',
+      defaultPath: `평가결과_${new Date().toISOString().split('T')[0]}.xlsx`,
+      filters: [
+        { name: 'Excel Files', extensions: ['xlsx'] }
+      ]
+    });
+
+    if (canceled) {
+      return { success: false, message: '저장이 취소되었습니다.' };
+    }
+
+    // 워크북 생성
+    const wb = XLSX.utils.book_new();
+    
+    // 워크시트 생성
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    
+    // 스타일 적용
+    for (let i = 0; i < styles.length; i++) {
+      for (let j = 0; j < styles[i].length; j++) {
+        const cellRef = XLSX.utils.encode_cell({ r: i, c: j });
+        if (!ws[cellRef]) continue;
+        
+        const style = styles[i][j];
+        if (Object.keys(style).length > 0) {
+          ws[cellRef].s = style;
+        }
+      }
+    }
+    
+    // 워크북에 워크시트 추가
+    XLSX.utils.book_append_sheet(wb, ws, "평가 결과");
+    
+    // 파일 저장
+    XLSX.writeFile(wb, filePath);
+    
+    return { success: true, message: '파일이 저장되었습니다.' };
+  } catch (error) {
+    console.error('파일 저장 중 오류:', error);
+    return { success: false, message: '파일 저장 중 오류가 발생했습니다.' };
+  }
+});
+

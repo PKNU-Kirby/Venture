@@ -11,47 +11,50 @@
   <div class="container">
     <h1>Excel 데이터 분석기</h1>
     
-    <div class="excel-table">
-      <div class="input-group">
+    <div class="input-group">
         <button id="loadExcel">엑셀 파일 선택</button>
       </div>
       <div class="input-group">
         <div class="range-input">
-          <label>데이터 범위</label>
+          <label>데이터 범위:</label>
           <input type="number" id="startRow" min="1" step="1" placeholder="시작 행">
           <span>:</span>
           <input type="number" id="endRow" min="1" step="1" placeholder="끝 행">
         </div>
         <button id="generateChart">차트 생성</button>
-
-    <button id="visibilityCalc" class="calc-btn">계산기</button>
       </div>
       <div id="chartContainer" class="chart-container">
         <canvas id="mainChart" width="1000" height="700"></canvas>
       </div>
-    </div>
-
-    
-    <!--<div class="calc-values" style="display:none">-->
-    <div class="calc-values">
       <div class="values-display">
-        <p>K 값 <span id="kValue">-</span></p>
-        <p>N 값 <span id="nValue">-</span></p>
+        <p>K 값: <span id="kValue">-</span></p>
+        <p>N 값: <span id="nValue">-</span></p>
       </div>
       <div class="input-group">
         <div class="evaluation-input">
-          <label>평가 값</label>
-          <input type="number" id="beforeValue" step="0.01" placeholder="성형 전 봉재 치수">
-          <input type="number" id="afterValue" step="0.01" placeholder="성형 후 봉재 치수">
-          <input type="number" id="degreeValue" step="0.01" placeholder="금형 반각">
-          <input type="number" id="frictionValue" step="0.01" placeholder="마찰계수(u)">
-          <!--<input type="number" id="afterStep" step="0.01" placeholder="after 증가 간격" value="0.1">-->
-          <button id="calculateEvaluation">평가 계산</button>
+            <label>평가 입력</label>
+            <div class="input-group">
+                <div class="range-input">
+                    <label for="d">성형 전 봉재 치수(d)</label>
+                    <input type="number" id="d" step="0.1" value="22.3" placeholder="22.3">
+                </div>
+                <div class="range-input">
+                    <label for="degree">금형 반각 (a)</label>
+                    <input type="number" id="degree" step="0.1" value="2" placeholder="2">
+                </div>
+                <div class="range-input">
+                    <label for="u">마찰계수 (u)</label>
+                    <input type="number" id="u" step="0.001" value="0.057" placeholder="0.057">
+                </div>
+            </div>
+            <button id="calculateEvaluation">평가 계산</button>
         </div>
       </div>
       <p>평가 결과: <span id="evaluationResult">-</span></p>
       <div id="resultTableContainer"></div>
-    </div>
+      <div class="export-container" style="margin-top: 20px; text-align: right;">
+        <button id="exportToExcel" style="display: none;">엑셀로 내보내기</button>
+      </div>
   </div>
   <script src="renderer.js"></script>
 </body>

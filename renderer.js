@@ -1,6 +1,6 @@
 import { calculateKAndN, createDataPoints } from './calculator.js';
 import { updateChart, toggleChartContainer, updateKNValues } from './chartManager.js';
-import { calculateSum, updateSumDisplay, calculateEvaluation, updateEvaluationDisplay, generateResultTableDelta } from './evaluation.js';
+import { calculateSum, updateSumDisplay, calculateEvaluation, updateEvaluationDisplay, generateResultTableDelta, setupInputFields, exportToExcel } from './evaluation.js';
 
 const {
   selectExcelFile,
@@ -13,16 +13,13 @@ let selectedFilePath = null;
 document.addEventListener('DOMContentLoaded', () => {
   const startRowInput = document.getElementById('startRow');
   const endRowInput = document.getElementById('endRow');
-  const dInput = document.getElementById('dValue');
-  const degreeInput = document.getElementById('degreeValue');
-  const frictionInput = document.getElementById('frictionValue');
+  const dInput = document.getElementById('d');
+  const degreeInput = document.getElementById('degree');
+  const frictionInput = document.getElementById('u');
 
   // 기본값 설정
   startRowInput.value = '';
   endRowInput.value = '';
-  dInput.value = '';
-  degreeInput.value = '';
-  frictionInput.value = '';
 
   // 입력 필드 이벤트 처리
   startRowInput.addEventListener('input', function() {
@@ -55,7 +52,33 @@ document.addEventListener('DOMContentLoaded', () => {
     // Δ 배열 정의
     const deltaArr = [5, 10, 15, 20, 25, 30, 35, 40];
     generateResultTableDelta(d, deltaArr, u, k, n);
+
+    // 엑셀 내보내기 버튼 표시
+    document.getElementById('exportToExcel').style.display = 'inline-block';
   });
+
+  // 엑셀 내보내기 버튼 이벤트 처리
+  document.getElementById('exportToExcel').addEventListener('click', () => {
+    const d = parseFloat(dInput.value);
+    const degree = parseFloat(degreeInput.value);
+    const u = parseFloat(frictionInput.value);
+    
+    // K와 N 값 가져오기
+    const kValue = document.getElementById('kValue').textContent;
+    const nValue = document.getElementById('nValue').textContent;
+    
+    const k = parseFloat(kValue);
+    const n = parseFloat(nValue);
+
+    // Δ 배열 정의
+    const deltaArr = [5, 10, 15, 20, 25, 30, 35, 40];
+    
+    // 엑셀 파일로 내보내기
+    exportToExcel(d, deltaArr, u, k, n);
+  });
+
+  // 입력 필드 설정
+  setupInputFields();
 });
 
 // // 범위 문자열을 시작과 끝 셀로 분리
