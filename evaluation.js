@@ -40,60 +40,59 @@ function calculateArea(diameter) {
 
 /**
  * 평가 계산 함수
- * @param {number} before - 성형 전 봉재 치수
- * @param {number} after - 성형 후 봉재 치수
+ * @param {number} d - 성형 전 봉재 치수
  * @param {number} degree - 금형 반각
  * @param {number} u - 마찰계수
  * @param {number} k - K값
  * @param {number} n - N값
  * @returns {Object} 계산 결과
  */
-function calculateValues(before, after, degree, u, k, n) {
-    // 단면적 계산
-    const f1 = calculateArea(before);
-    const f2 = calculateArea(after);
+function calculateValues(d, degree, u, k, n) {
+    // d_after 계산 (d = 2 * sqrt(1 - Δ/100))
+    const d_after = d * Math.sqrt(1 - degree/100);
 
-    // F 계산 : 단면적 변화량
+    // 단면적 계산
+    const f1 = calculateArea(d);
+    const f2 = calculateArea(d_after);
+
+    // F 계산 (f1 - f2)
     const F = f1 - f2;
 
-    // E 계산 : 변형도
+    // 변형도 계산
     const E = Math.log(f1 / f2);
 
-    // k_fm 계산 : 재료의 평균 항복 강도
+    // k_fm 계산
     const k_fm = k * Math.pow(E, n) / (1 + n);
 
     // Q 계산
-    const Q = (Math.PI * (Math.pow(before, 2) - Math.pow(after, 2))) / (4 * Math.sin(degree * Math.PI / 180));
+    const Q = (Math.PI * (Math.pow(d, 2) - Math.pow(d_after, 2))) / (4 * Math.sin(degree * Math.PI / 180));
 
-    // km 계산 : 평균 변형 저항
+    // km 계산
     const km = k_fm / (1 + ((F + Q * u) / (2 * f2)));
 
-    // Z_N, Z_R, Z_S 계산 : 순수 변형 힘, 마찰 저항 힘, 내부 전단 힘
-    // Z 계산 : 인발력
+    // Z_N, Z_R, Z_S 계산
     const Z_N = km * F;
     const Z_R = Q * u * km;
     const Z_S = 0.77 * f2 * k_fm * (Math.PI / 180 * degree);
-    const Z = Z_N + Z_R + Z_S;
 
-    // a 계산 : 인발 응력
-    const a = Z / f2;
+    // a 계산
+    const a = (Z_N + Z_R + Z_S) / f2;
 
-    return { km, a };
+    return { km, a, d_after };
 }
 
 /**
  * 평가 계산 함수
- * @param {number} before - 성형 전 봉재 치수
- * @param {number} after - 성형 후 봉재 치수
+ * @param {number} d - 성형 전 봉재 치수
  * @param {number} degree - 금형 반각
  * @param {number} u - 마찰계수
  * @param {number} k - K값
  * @param {number} n - N값
  * @returns {string} 평가 결과
  */
-export function calculateEvaluation(before, after, degree, u, k, n) {
+export function calculateEvaluation(d, degree, u, k, n) {
     // 입력값 유효성 검사
-    if (isNaN(before) || isNaN(after) || isNaN(degree) || isNaN(u) || isNaN(k) || isNaN(n)) {
+    if (isNaN(d) || isNaN(degree) || isNaN(u) || isNaN(k) || isNaN(n)) {
         return '유효하지 않은 입력값입니다.';
     }
 
@@ -102,7 +101,7 @@ export function calculateEvaluation(before, after, degree, u, k, n) {
         return '금형 반각은 0이 될 수 없습니다.';
     }
 
-    const { km, a } = calculateValues(before, after, degree, u, k, n);
+    const { km, a, d_after } = calculateValues(d, degree, u, k, n);
 
     // 결과 해석
     let result = '';
@@ -115,24 +114,25 @@ export function calculateEvaluation(before, after, degree, u, k, n) {
     // 상세 정보 포함
     return `평가 결과: ${result}\n` +
            `a 값: ${a.toFixed(4)}\n` +
-           `km 값: ${km.toFixed(4)}`;
+           `km 값: ${km.toFixed(4)}\n` +
+           `d_after 값: ${d_after.toFixed(4)}`;
 }
 
 /**
  * Δ(퍼센트 감소율)와 d, degree별로 km, σd(MPa) 값을 표로 출력하는 함수
- * @param {number} before - 성형 전 봉재 치수
+ * @param {number} d - 성형 전 봉재 치수
  * @param {number[]} deltaArr - 퍼센트 감소율 배열 (예: [5,10,15,...,40])
  * @param {number} u - 마찰계수
  * @param {number} k - K값
  * @param {number} n - N값
  */
-export function generateResultTableDelta(before, deltaArr, u, k, n) {
+export function generateResultTableDelta(d, deltaArr, u, k, n) {
     const tableContainer = document.getElementById('resultTableContainer');
     const table = document.createElement('table');
     table.className = 'result-table';
 
-    // d 값 계산
-    const dArr = deltaArr.map(delta => 2 * Math.sqrt(1 - delta / 100));
+    // d_after 값 계산
+    const d_afterArr = deltaArr.map(delta => d * Math.sqrt(1 - delta/100));
 
     // 표 헤더 생성
     const thead = document.createElement('thead');
@@ -147,13 +147,13 @@ export function generateResultTableDelta(before, deltaArr, u, k, n) {
     });
     thead.appendChild(headerRow2);
 
-    // d 값 행 추가
-    const dRow = document.createElement('tr');
-    dRow.innerHTML = '<th>d</th>';
-    dArr.forEach(d => {
-        dRow.innerHTML += `<th>${d.toFixed(2)}</th>`;
+    // d_after 값 행 추가
+    const d_afterRow = document.createElement('tr');
+    d_afterRow.innerHTML = '<th>d_after</th>';
+    d_afterArr.forEach(d_after => {
+        d_afterRow.innerHTML += `<th>${d_after.toFixed(2)}</th>`;
     });
-    thead.appendChild(dRow);
+    thead.appendChild(d_afterRow);
     table.appendChild(thead);
 
     // 표 본문 생성
@@ -162,9 +162,8 @@ export function generateResultTableDelta(before, deltaArr, u, k, n) {
         // km 행
         const kmRow = document.createElement('tr');
         kmRow.innerHTML = `<td rowspan="2">${degree}</td>`;
-        dArr.forEach((d, idx) => {
-            const { km, a } = calculateValues(before, d, degree, u, k, n);
-
+        d_afterArr.forEach((d_after, idx) => {
+            const { km, a } = calculateValues(d, degree, u, k, n);
             const cell = document.createElement('td');
             if (Math.abs(a - km) < 0.0001) {
                 cell.className = 'boundary';
@@ -179,8 +178,8 @@ export function generateResultTableDelta(before, deltaArr, u, k, n) {
         tbody.appendChild(kmRow);
         // σd(MPa) 행
         const aRow = document.createElement('tr');
-        dArr.forEach((d, idx) => {
-            const { km, a } = calculateValues(before, d, degree, u, k, n);
+        d_afterArr.forEach((d_after, idx) => {
+            const { km, a } = calculateValues(d, degree, u, k, n);
             const cell = document.createElement('td');
             if (Math.abs(a - km) < 0.0001) {
                 cell.className = 'boundary';

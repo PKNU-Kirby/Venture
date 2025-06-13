@@ -13,14 +13,14 @@ let selectedFilePath = null;
 document.addEventListener('DOMContentLoaded', () => {
   const startRowInput = document.getElementById('startRow');
   const endRowInput = document.getElementById('endRow');
-  const beforeInput = document.getElementById('beforeValue');
+  const dInput = document.getElementById('dValue');
   const degreeInput = document.getElementById('degreeValue');
   const frictionInput = document.getElementById('frictionValue');
 
   // 기본값 설정
   startRowInput.value = '';
   endRowInput.value = '';
-  beforeInput.value = '';
+  dInput.value = '';
   degreeInput.value = '';
   frictionInput.value = '';
 
@@ -37,8 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 평가 계산 버튼 이벤트 처리
   document.getElementById('calculateEvaluation').addEventListener('click', () => {
-    const before = parseFloat(beforeInput.value);
-    const degree = parseFloat(degreeInput.value); // 단일 degree는 평가 결과용
+    const d = parseFloat(dInput.value);
+    const degree = parseFloat(degreeInput.value);
     const u = parseFloat(frictionInput.value);
     
     // K와 N 값 가져오기
@@ -48,14 +48,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const k = parseFloat(kValue);
     const n = parseFloat(nValue);
 
-    // 평가 결과 텍스트(단일 degree, after=before)
-    const result = calculateEvaluation(before, before, degree, u, k, n);
+    // 평가 결과 텍스트
+    const result = calculateEvaluation(d, degree, u, k, n);
     updateEvaluationDisplay(result);
 
     // Δ 배열 정의
     const deltaArr = [5, 10, 15, 20, 25, 30, 35, 40];
-    generateResultTableDelta(before, deltaArr, u, k, n);
-
+    generateResultTableDelta(d, deltaArr, u, k, n);
   });
 });
 
