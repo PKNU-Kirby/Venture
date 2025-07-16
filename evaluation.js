@@ -27,7 +27,7 @@ function calculateValues(d, delta, degree, u, k, n) {
     const F = f1 - f2;
     const E = Math.log(f1 / f2);
     const k_fm = k * Math.pow(E, n) / (1 + n);
-    const Q = (Math.PI * (Math.pow(d, 2) - Math.pow(d_after, 2))) / (4 * Math.sin(degree * Math.PI / 180));
+    const Q = (Math.PI * (Math.pow(d, 2) - Math.pow(d_after, 2))) / (4 * Math.sin(degree));
     const km = k_fm / (1 + ((F + Q * u) / (2 * f2)));
     const Z_N = km * F;
     const Z_R = Q * u * km;
