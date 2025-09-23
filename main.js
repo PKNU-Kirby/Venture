@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const XLSX = require('xlsx');
+const { analyze } = require('./tension');
 
 function createWindow () {
     const win = new BrowserWindow({
@@ -12,7 +13,7 @@ function createWindow () {
           contextIsolation: true,        // ✅ 필수
           nodeIntegration: false,        // ✅ 보안상 false
           enableRemoteModule: false,      // ✅ Remote 사용 안함
-          sandox: false
+          sandox: true
         }
       });
 
@@ -21,44 +22,74 @@ function createWindow () {
 
 app.whenReady().then(createWindow);
 
-// 특정 범위의 데이터를 추출하는 함수
+// // 특정 범위의 데이터를 추출하는 함수
+// function getDataFromRange(worksheet, xRange, yRange) {
+//   const xStartCol = xRange.start.match(/[A-Z]+/)[0];
+//   const xStartRow = parseInt(xRange.start.match(/\d+/)[0]);
+//   const xEndRow = parseInt(xRange.end.match(/\d+/)[0]);
+  
+//   const yStartCol = yRange.start.match(/[A-Z]+/)[0];
+//   const yStartRow = parseInt(yRange.start.match(/\d+/)[0]);
+//   const yEndRow = parseInt(yRange.end.match(/\d+/)[0]);
+
+//   const data = {
+//     labels: [],
+//     values: []
+//   };
+
+//   // X축 데이터 (레이블) 추출
+//   for (let row = xStartRow; row <= xEndRow; row++) {
+//     const cellAddress = `${xStartCol}${row}`;
+//     const cell = worksheet[cellAddress];
+//     if (cell) {
+//       data.labels.push(cell.v);
+//     }
+//   }
+
+//   // Y축 데이터 (값) 추출
+//   for (let row = yStartRow; row <= yEndRow; row++) {
+//     const cellAddress = `${yStartCol}${row}`;
+//     const cell = worksheet[cellAddress];
+//     if (cell) {
+//       if (typeof cell.v === 'number') {
+//         data.values.push(cell.v);
+//       } else {
+//         // 숫자가 아닌 경우 0으로 처리
+//         data.values.push(0);
+//       }
+//     }
+//   }
+
+//   return data;
+// }
+
 function getDataFromRange(worksheet, xRange, yRange) {
+  const toNum = v => (typeof v === 'number' ? v : Number(v));
+  const data = { labels: [], values: [] };
+
+  // X축
   const xStartCol = xRange.start.match(/[A-Z]+/)[0];
   const xStartRow = parseInt(xRange.start.match(/\d+/)[0]);
-  const xEndRow = parseInt(xRange.end.match(/\d+/)[0]);
-  
+  const xEndRow   = parseInt(xRange.end.match(/\d+/)[0]);
+  for (let row = xStartRow; row <= xEndRow; row++) {
+    const cell = worksheet[`${xStartCol}${row}`];
+    const val  = cell?.v;
+    const num  = toNum(val);
+    if (Number.isFinite(num)) data.labels.push(num);
+    // 숫자가 아니면 스킵
+  }
+
+  // Y축
   const yStartCol = yRange.start.match(/[A-Z]+/)[0];
   const yStartRow = parseInt(yRange.start.match(/\d+/)[0]);
-  const yEndRow = parseInt(yRange.end.match(/\d+/)[0]);
-
-  const data = {
-    labels: [],
-    values: []
-  };
-
-  // X축 데이터 (레이블) 추출
-  for (let row = xStartRow; row <= xEndRow; row++) {
-    const cellAddress = `${xStartCol}${row}`;
-    const cell = worksheet[cellAddress];
-    if (cell) {
-      data.labels.push(cell.v);
-    }
-  }
-
-  // Y축 데이터 (값) 추출
+  const yEndRow   = parseInt(yRange.end.match(/\d+/)[0]);
   for (let row = yStartRow; row <= yEndRow; row++) {
-    const cellAddress = `${yStartCol}${row}`;
-    const cell = worksheet[cellAddress];
-    if (cell) {
-      if (typeof cell.v === 'number') {
-        data.values.push(cell.v);
-      } else {
-        // 숫자가 아닌 경우 0으로 처리
-        data.values.push(0);
-      }
-    }
+    const cell = worksheet[`${yStartCol}${row}`];
+    const val  = cell?.v;
+    const num  = toNum(val);
+    if (Number.isFinite(num)) data.values.push(num);
   }
-
+  
   return data;
 }
 
@@ -102,6 +133,32 @@ ipcMain.handle('extract-chart-data', async (event, filePath, range) => {
     console.error('데이터 추출 중 오류:', error);
     throw error;
   }
+});
+
+//인장 시험 raw 데이터를 입력값을 받음 (하중, 스트로크)
+ipcMain.handle('analyze-tension-from-excel', async (_evt, payload) => {
+  const { filePath, startRow, endRow, L0, A0 } = payload;
+
+  const wb = XLSX.readFile(filePath);
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+  const from = Math.max(0, (startRow ?? 9) - 1);
+  const to   = endRow ? Math.min(rows.length-1, endRow - 1) : rows.length - 1;
+
+  const force = [], stroke = [];
+  for (let r = from; r <= to; r++) {
+    const row = rows[r];
+    if (!row) continue;
+    const F = Number(row[0]); // A열=하중 F
+    const t = Number(row[1]); // B열=스트로크 t
+    if (Number.isFinite(F) && Number.isFinite(t)) {
+      force.push(F);
+      stroke.push(t);
+    }
+  }
+
+  return analyze({ force, stroke, L0: Number(L0), A0: Number(A0) });
 });
 
 // 엑셀 파일 저장

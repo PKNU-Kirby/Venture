@@ -13,9 +13,16 @@
     
     <div class="input-group">
         <button id="loadExcel">엑셀 파일 선택</button>
+        <div class="input-group" style="margin-top:8px;">
+          선택된 파일: <strong id="selectedFileName">없음</strong>
+        </div>
       </div>
       <div class="input-group">
         <div class="range-input">
+          <label>l (초기 길이):</label>
+        <input type="number" id="inputL" step="0.0001" value="0.05" />
+        <label>a (초기 단면적):</label>
+        <input type="number" id="inputA" step="1e-8" value="0.00001" />
           <label>데이터 범위:</label>
           <input type="number" id="startRow" min="1" step="1" placeholder="시작 행">
           <span>:</span>
@@ -25,6 +32,8 @@
       </div>
       <div id="chartContainer" class="chart-container">
         <canvas id="mainChart" width="1000" height="700"></canvas>
+        <h3 style="margin-top:24px"> log(ε),log(σ) (균일 소성 변형구간)</h3>
+        <canvas id="logChart" width="1100" height="360"></canvas>
       </div>
       <div class="values-display">
         <p>K 값: <span id="kValue">-</span></p>
@@ -56,6 +65,5 @@
         <button id="exportToExcel" style="display: none;">엑셀로 내보내기</button>
       </div>
   </div>
-  <script src="renderer.js"></script>
 </body>
 </html>
