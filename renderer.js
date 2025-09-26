@@ -9,20 +9,24 @@ const {
 
 let selectedFilePath = null;
 
+// 메인 차트 계산값 캐시
+let lastEpsTrue = null;
+let lastSigTrue = null;
+
 // ===== Helpers: compute ε, σ from raw F, t and transform to ln ε, ln σ =====
 function computeTrueStressStrainArrays(forceArr, strokeArr, L0, A0) {
   const n = Math.min(forceArr.length, strokeArr.length);
   const epsTrue = []; // ε = ln(1 + t/L0)
   const sigTrue = []; // σ = (F/A0) * (1 + t/L0)
   for (let i = 0; i < n; i++) {
-    const F = Number(forceArr[i]);
-    const t = Number(strokeArr[i]);
+    const F = Number(forceArr[i]); //하중
+    const t = Number(strokeArr[i]); //스트로크
     if (!Number.isFinite(F) || !Number.isFinite(t)) continue;
     const e = t / L0;          // engineering strain
     const s = F / A0;          // engineering stress
     const eps = Math.log(1 + e);
     const sig = s * (1 + e);
-    if (Number.isFinite(eps) && Number.isFinite(sig) && sig > 0 && eps > 0) {
+    if (Number.isFinite(eps) && Number.isFinite(sig) && sig >= 0 && eps >= 0) {
       epsTrue.push(eps);
       sigTrue.push(sig);
     }
@@ -83,16 +87,16 @@ function linreg(x, y) {
 }
 
 // 균일 소성 구간만 ln 변환 (startIdx ~ neckIdx)
-function toLogSegment(epsTrue, sigTrue, startIdx, neckIdx) {
-  const lx=[], ly=[];
+function toLog10Segment(epsTrue, sigTrue, startIdx, neckIdx) {
+  const lx10=[], ly10=[];
   for (let i=startIdx; i<=neckIdx; i++){
     const e = epsTrue[i], s = sigTrue[i];
     if (e > 0 && s > 0 && Number.isFinite(e) && Number.isFinite(s)) {
-      lx.push(Math.log(e)); // ln ε
-      ly.push(Math.log(s)); // ln σ
+      lx10.push(Math.log10(e)); // log10 ε
+      ly10.push(Math.log10(s)); // log10 σ
     }
   }
-  return { lx, ly };
+  return { lx10, ly10 };
 }
 
 
@@ -243,7 +247,7 @@ document.getElementById('generateChart').addEventListener('click', async () => {
       return;
     }
 
-    // 1) F,t → ε(진변형률), σ(진응력)
+    // F,t → ε(진변형률), σ(진응력)
     const { epsTrue, sigTrue } = computeTrueStressStrainArrays(rawF, rawT, L0, A0);
 
     if (epsTrue.length < 3) {
@@ -251,32 +255,38 @@ document.getElementById('generateChart').addEventListener('click', async () => {
       return;
     }
 
-    // 2) ln ε, ln σ로 변환 (기존 calculator.js가 로그-로그 데이터를 기대)
-    const { lx, ly } = toLogArrays(epsTrue, sigTrue);
-    if (lx.length < 3) {
-      alert('로그 변환 후 유효한 샘플이 부족합니다.');
-      return;
-    }
-
-    // 데이터 포인트 생성(로그-로그)
-    const dataPoints = createDataPoints(lx, ly);
-
-    // K와 N 값 계산 (lnσ = lnK + n·lnε)
-    const { k, n } = calculateKAndN(lx, ly);
-
-    // K와 N 표시
-    updateKNValues(k, n);
-    
-    // K와 N 값의 합 계산 및 표시
-    const sum = calculateSum(k, n);
-    updateSumDisplay(sum);
-
     // 선형 포인트 생성 ε–σ(선형)
     const linearPoints = createDataPoints(
       // x 배열: ε, y 배열: σ
-      epsTrue.filter((v,i)=> Number.isFinite(v) && Number.isFinite(sigTrue[i])),
-      sigTrue.filter((v,i)=> Number.isFinite(v) && Number.isFinite(epsTrue[i]))
+      epsTrue.filter((v,i)=> Number.isFinite(v) && Number.isFinite(sigTrue[i]) && v >= 0),
+      sigTrue.filter((v,i)=> Number.isFinite(v) && Number.isFinite(epsTrue[i]) && v >=0 )
     );
+
+    // --- DEBUG: first sample check (define variables BEFORE using them) ---
+    // first-e sample
+    const e0 = rawT[0] / L0;                 // t/L0
+    const eps0 = Math.log(1 + e0);           // ln(1+e0)
+    const s0 = rawF[0] / A0;                 // F/A0
+    const sig0 = s0 * (1 + e0);              // s0*(1+e0)
+
+    // screen logger (works even if DevTools closed)
+    const dbg = (...args) => {
+      const el = document.getElementById('dbg'); if (!el) return;
+      el.textContent += args.map(x => (typeof x === 'string' ? x : JSON.stringify(x))).join(' ') + '\n';
+    };
+
+    dbg('[DBG] first F,t =', rawF[0], rawT[0]);
+    dbg('[DBG] L0=', L0, 'A0=', A0);
+    dbg('[DBG] e0 = t/L0 =', e0);
+    dbg('[DBG] eps0 = ln(1+e0) =', eps0);
+    dbg('[DBG] s0 = F/A0 =', s0);
+    dbg('[DBG] sig0 = s0*(1+e0) =', sig0);
+
+    // also print to console
+    console.log('[DBG] L0=', L0, 'A0=', A0);
+    console.log('[DBG] first F,t =', rawF[0], rawT[0], 'units?');
+    console.log('[DBG] e0=t/L0 =', e0);
+    console.log('[DBG] eps0=ln(1+e0) =', eps0);
     
     // 차트 컨테이너 표시
     toggleChartContainer(true);
@@ -285,10 +295,84 @@ document.getElementById('generateChart').addEventListener('click', async () => {
     const ctx = document.getElementById('mainChart').getContext('2d');
     updateChart(ctx, linearPoints);
 
+    // 캐시에 저장
+    lastEpsTrue = epsTrue;
+    lastSigTrue = sigTrue;
+
   } catch (error) {
     console.error('차트 생성 중 오류:', error);
     alert('차트 생성 중 오류가 발생했습니다.');
   }
+});
+
+// 선형 회귀 차트 생성
+document.getElementById('generateLogChart').addEventListener('click', () => {
+  if (!lastEpsTrue || !lastSigTrue) {
+    alert('먼저 메인 차트를 생성하세요.');
+    return;
+  }
+
+  const epsTrue = lastEpsTrue;
+  const sigTrue = lastSigTrue;
+
+  // 1) 넥킹(Considère) 인덱스
+  const neckIdx = findNeckIndexConsidere(epsTrue, sigTrue);
+
+  // 2) 구간 시작: 간단히 ε ≥ 0.002 첫 지점(0.2% 오프셋 근사)
+  let startIdx = 0;
+  for (let i=0; i<epsTrue.length; i++){
+    if (epsTrue[i] >= 0.002) { startIdx = i; break; }
+  }
+  if (startIdx >= neckIdx) startIdx = Math.max(0, neckIdx - 5);
+
+  // 3) 균일 소성 구간만 ln 변환
+  const { lx10, ly10 } = toLog10Segment(epsTrue, sigTrue, startIdx, neckIdx);
+  if (lx10.length < 3) {
+    alert('균일 소성 구간의 로그 데이터가 부족합니다.');
+    return;
+  }
+
+  // 4) 회귀(lnσ = a + b lnε → K=exp(a), n=b) — 필요 시 K,N UI 업데이트
+  const { a, b, R2 } = linreg(lx10, ly10);
+  const K = Math.pow(10, a), n = b;
+
+  // (선택) K,N 덮어쓰기
+  updateKNValues(K, n);
+  updateSumDisplay(calculateSum(K, n));
+
+  // 5) 회귀선 좌표 생성
+  const minX = Math.min(...lx10), maxX = Math.max(...lx10), grid = 100;
+  const trend = [];
+  for (let i=0; i<=grid; i++){
+    const x = minX + (maxX-minX)*i/grid;
+    const y = a + b*x;
+    trend.push({ x, y });
+  }
+
+  // 6) 보조 차트 렌더 (lnε–lnσ)
+  const ctx2 = document.getElementById('logChart').getContext('2d');
+  const scatter = lx10.map((x,i)=> ({ x, y: ly10[i] }));
+  if (window.__logChart) window.__logChart.destroy();
+  window.__logChart = new Chart(ctx2, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        { label: 'lnσ vs lnε (pre-neck)', data: scatter, showLine:false, pointRadius:2, borderWidth:0 },
+        { label: 'trend  (lnσ = a lnε + b)', data: trend, showLine:true, pointRadius:0, borderWidth:2 }
+      ]
+    },
+    options: {
+      responsive:false, animation:false,
+      scales: {
+        x: { type:'linear', title:{ display:true, text:'log10 ε' } },
+        y: { title:{ display:true, text:'log10 σ' } }
+      }
+    }
+  });
+
+  const infoEl = document.getElementById('knInfo');
+  if (infoEl) infoEl.textContent =
+    `균일 소성 구간: [${startIdx} ~ ${neckIdx}]  |  K=${K.toFixed(4)}, n=${n.toFixed(4)}, R²=${R2.toFixed(4)} (N=${lx10.length})`;
 });
 
 // 계산기 토글 버튼

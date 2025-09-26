@@ -95,7 +95,7 @@ export function createDataPoints(labels, values) {
     const y = parseFloat(values[i]);
     
     if (isValidNumber(x) && isValidNumber(y)) {
-      dataPoints.push({ x: Math.pow(10, x), y });
+      dataPoints.push({ x, y });
     }
   }
   return dataPoints;

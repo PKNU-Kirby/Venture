@@ -1,4 +1,4 @@
-// app/tension.js
+
 function derivative(x, y) {
   const n = x.length, d = Array(n).fill(0);
   if (n < 3) return d;

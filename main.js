@@ -13,7 +13,7 @@ function createWindow () {
           contextIsolation: true,        // ✅ 필수
           nodeIntegration: false,        // ✅ 보안상 false
           enableRemoteModule: false,      // ✅ Remote 사용 안함
-          sandox: true
+          sandbox: true
         }
       });
 
@@ -63,33 +63,71 @@ app.whenReady().then(createWindow);
 //   return data;
 // }
 
-function getDataFromRange(worksheet, xRange, yRange) {
-  const toNum = v => (typeof v === 'number' ? v : Number(v));
-  const data = { labels: [], values: [] };
+// function getDataFromRange(worksheet, xRange, yRange) {
+//   const toNum = v => (typeof v === 'number' ? v : Number(v));
+//   const data = { labels: [], values: [] };
 
-  // X축
-  const xStartCol = xRange.start.match(/[A-Z]+/)[0];
-  const xStartRow = parseInt(xRange.start.match(/\d+/)[0]);
-  const xEndRow   = parseInt(xRange.end.match(/\d+/)[0]);
-  for (let row = xStartRow; row <= xEndRow; row++) {
-    const cell = worksheet[`${xStartCol}${row}`];
-    const val  = cell?.v;
-    const num  = toNum(val);
-    if (Number.isFinite(num)) data.labels.push(num);
-    // 숫자가 아니면 스킵
-  }
+//   // X축
+//   const xStartCol = xRange.start.match(/[A-Z]+/)[0];
+//   const xStartRow = parseInt(xRange.start.match(/\d+/)[0]);
+//   const xEndRow   = parseInt(xRange.end.match(/\d+/)[0]);
+//   for (let row = xStartRow; row <= xEndRow; row++) {
+//     const cell = worksheet[`${xStartCol}${row}`];
+//     const val  = cell?.v;
+//     const num  = toNum(val);
+//     if (Number.isFinite(num)) data.labels.push(num);
+//     // 숫자가 아니면 스킵
+//   }
 
-  // Y축
-  const yStartCol = yRange.start.match(/[A-Z]+/)[0];
-  const yStartRow = parseInt(yRange.start.match(/\d+/)[0]);
-  const yEndRow   = parseInt(yRange.end.match(/\d+/)[0]);
-  for (let row = yStartRow; row <= yEndRow; row++) {
-    const cell = worksheet[`${yStartCol}${row}`];
-    const val  = cell?.v;
-    const num  = toNum(val);
-    if (Number.isFinite(num)) data.values.push(num);
-  }
+//   // Y축
+//   const yStartCol = yRange.start.match(/[A-Z]+/)[0];
+//   const yStartRow = parseInt(yRange.start.match(/\d+/)[0]);
+//   const yEndRow   = parseInt(yRange.end.match(/\d+/)[0]);
+//   for (let row = yStartRow; row <= yEndRow; row++) {
+//     const cell = worksheet[`${yStartCol}${row}`];
+//     const val  = cell?.v;
+//     const num  = toNum(val);
+//     if (Number.isFinite(num)) data.values.push(num);
+//   }
   
+//   return data;
+// }
+
+//짝을 맞춰서 데이터 불러오기
+function getDataFromRange(worksheet, xRange, yRange) {
+  const toNum = (v) => {
+    if (typeof v === 'number') return v;
+    if (typeof v === 'string') {
+      // 천단위 쉼표 제거, 소수점은 점(.) 기준
+      const cleaned = v.replace(/,/g, '');
+      const n = Number(cleaned);
+      return Number.isFinite(n) ? n : NaN;
+    }
+    return NaN;
+  };
+
+  const xCol = xRange.start.match(/[A-Z]+/)[0];
+  const yCol = yRange.start.match(/[A-Z]+/)[0];
+  const xStart = parseInt(xRange.start.match(/\d+/)[0]);
+  const xEnd   = parseInt(xRange.end.match(/\d+/)[0]);
+  const yStart = parseInt(yRange.start.match(/\d+/)[0]);
+  const yEnd   = parseInt(yRange.end.match(/\d+/)[0]);
+
+  // 두 범위의 공통 구간만 돈다
+  const start = Math.max(xStart, yStart);
+  const end   = Math.min(xEnd,   yEnd);
+
+  const data = { labels: [], values: [] }; // A=F, B=t
+
+  for (let row = start; row <= end; row++) {
+    const Fx = toNum(worksheet[`${xCol}${row}`]?.v); // F
+    const Ty = toNum(worksheet[`${yCol}${row}`]?.v); // t
+    if (Number.isFinite(Fx) && Number.isFinite(Ty)) {
+      data.labels.push(Fx);
+      data.values.push(Ty);
+    }
+    // 한쪽만 NaN이면 둘 다 건너뜀 → F,t 짝 유지
+  }
   return data;
 }
 

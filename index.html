@@ -8,6 +8,7 @@
   <script type="module" src="renderer.js"></script>
 </head>
 <body>
+  <pre id="dbg" style="background:#111;color:#0f0;padding:8px;max-height:160px;overflow:auto"></pre>
   <div class="container">
     <h1>Excel 데이터 분석기</h1>
     
@@ -20,18 +21,20 @@
       <div class="input-group">
         <div class="range-input">
           <label>l (초기 길이):</label>
-        <input type="number" id="inputL" step="0.0001" value="0.05" />
-        <label>a (초기 단면적):</label>
-        <input type="number" id="inputA" step="1e-8" value="0.00001" />
+          <input type="number" id="inputL" step="0.0001" value="25" />
+          <label>a (초기 단면적):</label>
+          <input type="number" id="inputA" step="1e-8" value="19.63495" />
           <label>데이터 범위:</label>
           <input type="number" id="startRow" min="1" step="1" placeholder="시작 행">
           <span>:</span>
           <input type="number" id="endRow" min="1" step="1" placeholder="끝 행">
         </div>
-        <button id="generateChart">차트 생성</button>
+        <button id="generateChart">진응력 진변형률 차트 생성</button>
       </div>
       <div id="chartContainer" class="chart-container">
         <canvas id="mainChart" width="1000" height="700"></canvas>
+        <button id="generateLogChart">균일 소성 변형 구간(lnε–lnσ) 생성</button>
+        <p id="knInfo" style="margin:6px 0 0 0;color:#555"></p>
         <h3 style="margin-top:24px"> log(ε),log(σ) (균일 소성 변형구간)</h3>
         <canvas id="logChart" width="1100" height="360"></canvas>
       </div>

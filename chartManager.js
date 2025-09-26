@@ -24,14 +24,14 @@ const axesConfig = {
     position: 'bottom',
     title: {
       display: true,
-      text: 'X'
+      text: 'ε (진변형률)'
     }
   },
   y: {
     type: 'linear',
     title: {
       display: true,
-      text: 'Y'
+      text: 'σ (진응력)'
     }
   }
 };
